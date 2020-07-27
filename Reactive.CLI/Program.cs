@@ -1,12 +1,19 @@
 ﻿using System;
+using System.Threading.Tasks;
+
+using Reactive.CLI.Connectors;
+
+using Refit;
 
 namespace Reactive.CLI
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Creating API Services");
+            var api = RestService.For<ITodoApi>("https://jsonplaceholder.typicode.com/");
+            Console.WriteLine("API Created for JsonPlaceholder");
         }
     }
 }
