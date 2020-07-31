@@ -1,10 +1,11 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace Reactive.CLI.Workers
 {
-    public interface IWorker
+    public interface IWorker<T> where
+        T : class
     {
-        Task DoWork(CancellationToken cancellationToken = default);
+        IObservable<T> State { get; }
+        IDisposable Run();
     }
 }

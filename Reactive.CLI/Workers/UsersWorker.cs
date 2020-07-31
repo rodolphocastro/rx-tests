@@ -1,47 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Reactive.Threading.Tasks;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Reactive.CLI.Connectors;
 
 namespace Reactive.CLI.Workers
 {
-    public class UsersWorker : BaseWorker, IWorker
+    public class UsersWorker : BaseWorker, IWorker<User>
     {
         private ReplaySubject<User> _user = new ReplaySubject<User>();
 
-        public UsersWorker(ITodoApi api) : base(api)
-        {
-        }
+        public UsersWorker(ITodoApi api) : base(api) { }
 
-        public IObservable<User> User => _user;
-        public IObservable<IEnumerable<User>> Users => _user.ToList();
+        public IObservable<User> State => _user;
 
-        public async Task DoWork(CancellationToken cancellationToken = default)
-        {
-            while (!cancellationToken.IsCancellationRequested)
+        public IDisposable Run() => Observable
+            .Interval(TimeSpan.FromSeconds(15))
+            .Timestamp()
+            .Subscribe(async l =>
             {
-                Console.WriteLine("Checking API for users");
-
-                Api
-                    .ListUsers()
-                    .ToObservable()
-                    .Subscribe(us =>
-                    {
-                        foreach (var user in us)
-                        {
-                            _user.OnNext(user);
-                        }
-                    });
-
-
-                await Wait();
-            }
-        }
+                Console.WriteLine("{0} Fetching users from API", l.Timestamp.ToLocalTime());
+                var users = await Api.ListUsers();
+                foreach (var user in users)
+                {
+                    _user.OnNext(user);
+                }
+            });
     }
 }
