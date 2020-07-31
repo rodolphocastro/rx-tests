@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reactive.Linq;
 
 using Reactive.CLI.Connectors;
@@ -17,16 +18,27 @@ namespace Reactive.CLI
             Console.WriteLine("API Created for JsonPlaceholder");
 
             IWorker<User> userWorker = new UsersWorker(api);
-            var distinctUser = userWorker.State
-                .Distinct(u => u.Id)
-                .Subscribe(u => Console.WriteLine("A wild {0} appears!", u.Name));
+            IWorker<Post> postWorker = new PostsWorker(api);
 
+            var distinctUsers = userWorker.State
+                .Distinct(u => u.Id);
+            distinctUsers.Subscribe(u => Console.WriteLine("A wild {0} appears!", u.Name));
+
+            var distinctPosts = postWorker.State
+                .Distinct(p => p.Id);
+
+            distinctPosts
+                .Subscribe(p =>
+                    distinctUsers
+                        .Where(u => u.Id == p.UserId)
+                        .Subscribe(u => Console.WriteLine("Post {0} belongs to {1}", p.Title, u.Name)));
             Console.WriteLine($"{DateTimeOffset.UtcNow.ToLocalTime()} -> Main Thread is alive");
-            using (userWorker.Run())
-            {
-                Console.WriteLine("Press a key to end");
-                Console.ReadLine();
-            }
+            postWorker.Run();
+            userWorker.Run();
+
+            Console.WriteLine("Press a key to end");
+            Console.ReadLine();
+
         }
     }
 }
